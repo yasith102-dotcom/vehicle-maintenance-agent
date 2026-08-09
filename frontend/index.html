@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Vehicle Maintenance AI</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #eef2f7;
+            color: #1f2937;
+        }
+
+        .header {
+            background: #111827;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            color: #cbd5e1;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            margin-top: 0;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #2563eb;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 18px;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #475569;
+        }
+
+        #result {
+            display: none;
+        }
+
+        .result-box {
+            background: #f8fafc;
+            border-left: 5px solid #2563eb;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.7;
+        }
+
+        .status {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 7px 14px;
+            border-radius: 20px;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .error {
+            margin-top: 15px;
+            color: #dc2626;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="header">
+    <h1>🚗 Vehicle Maintenance AI</h1>
+    <p>Agentic AI Vehicle Diagnosis & Risk Assessment System</p>
+</header>
+
+<main class="container">
+
+    <section class="card">
+        <h2>🔧 Vehicle Problem Diagnosis</h2>
+
+        <p>
+            Describe the symptoms or problem you are experiencing with your vehicle.
+        </p>
+
+        <textarea
+            id="symptoms"
+            placeholder="Example: My car makes a clicking noise when I try to start the engine."
+        ></textarea>
+
+        <button id="diagnoseButton" onclick="diagnoseVehicle()">
+            🔍 Diagnose Vehicle
+        </button>
+
+        <div id="loading">
+            🤖 AI agents are analyzing your vehicle problem...
+        </div>
+
+        <div id="error" class="error"></div>
+    </section>
+
+
+    <section id="result" class="card">
+
+        <h2>📋 Diagnosis Result</h2>
+
+        <span class="status">
+            ✓ Analysis Completed
+        </span>
+
+        <div class="result-box" id="resultText"></div>
+
+    </section>
+
+</main>
+
+<footer class="footer">
+    Vehicle Maintenance AI • Agentic AI System
+</footer>
+
+
+<script>
+
+async function diagnoseVehicle() {
+
+    const symptoms =
+        document.getElementById("symptoms").value.trim();
+
+    const result =
+        document.getElementById("result");
+
+    const resultText =
+        document.getElementById("resultText");
+
+    const loading =
+        document.getElementById("loading");
+
+    const error =
+        document.getElementById("error");
+
+    const button =
+        document.getElementById("diagnoseButton");
+
+
+    result.style.display = "none";
+    error.textContent = "";
+
+
+    if (!symptoms) {
+
+        error.textContent =
+            "Please describe your vehicle problem.";
+
+        return;
+    }
+
+
+    loading.style.display = "block";
+    button.disabled = true;
+    button.textContent = "Analyzing...";
+
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/diagnose",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    symptoms: symptoms
+                })
+            }
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "The diagnosis service returned an error."
+            );
+        }
+
+
+        const data = await response.json();
+
+
+        resultText.textContent =
+            data.result;
+
+        result.style.display = "block";
+
+
+        result.scrollIntoView({
+            behavior: "smooth"
+        });
+
+
+    } catch (err) {
+
+        error.textContent =
+            "Unable to connect to the Vehicle Maintenance AI backend. Make sure the FastAPI server is running.";
+
+    } finally {
+
+        loading.style.display = "none";
+
+        button.disabled = false;
+
+        button.textContent =
+            "🔍 Diagnose Vehicle";
+    }
+}
+
+</script>
+
+</body>
+</html>

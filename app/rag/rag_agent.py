@@ -1,106 +1,107 @@
 from pathlib import Path
-
-from langchain_community.document_loaders import TextLoader
-from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+import chromadb
 
 
 # Project root directory
-BASE_DIR = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-# Knowledge base location
-KNOWLEDGE_BASE = (
-    BASE_DIR / "data" / "vehicle_manuals" / "basic_vehicle_maintenance.txt"
+# Vehicle knowledge base
+KNOWLEDGE_FILE = (
+    PROJECT_ROOT
+    / "data"
+    / "vehicle_manuals"
+    / "basic_vehicle_maintenance.txt"
+)
+
+# Chroma persistent database
+CHROMA_PATH = PROJECT_ROOT / ".chroma"
+
+# Create Chroma client
+client = chromadb.PersistentClient(
+    path=str(CHROMA_PATH)
+)
+
+# Create or load collection
+collection = client.get_or_create_collection(
+    name="vehicle_maintenance"
 )
 
 
 def load_knowledge_base():
-    """Load vehicle maintenance documents."""
+    """
+    Load vehicle maintenance knowledge into Chroma.
+    """
 
-    loader = TextLoader(
-        str(KNOWLEDGE_BASE),
+    if not KNOWLEDGE_FILE.exists():
+        raise FileNotFoundError(
+            f"Knowledge base not found: {KNOWLEDGE_FILE}"
+        )
+
+    text = KNOWLEDGE_FILE.read_text(
         encoding="utf-8"
     )
 
-    documents = loader.load()
-
-    return documents
-
-
-def split_documents(documents):
-    """Split documents into smaller chunks for retrieval."""
-
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50
-    )
-
-    chunks = splitter.split_documents(documents)
-
-    return chunks
-
-
-def retrieve_vehicle_knowledge(query: str):
-    """
-    Retrieve relevant vehicle-maintenance information
-    from the domain-specific knowledge base.
-    """
-
-    documents = load_knowledge_base()
-
-    chunks = split_documents(documents)
-
-    # Simple keyword-based retrieval for the first RAG version.
-    query_words = set(query.lower().split())
-
-    scored_chunks = []
-
-    for chunk in chunks:
-        text = chunk.page_content.lower()
-
-        score = sum(
-            1 for word in query_words
-            if len(word) > 2 and word in text
-        )
-
-        scored_chunks.append((score, chunk))
-
-    scored_chunks.sort(
-        key=lambda item: item[0],
-        reverse=True
-    )
-
-    top_chunks = [
-        chunk for score, chunk in scored_chunks[:3]
-        if score > 0
+    # Split knowledge into individual sections
+    sections = [
+        section.strip()
+        for section in text.split("\n\n")
+        if section.strip()
     ]
 
-    return top_chunks
+    if not sections:
+        raise ValueError(
+            "Knowledge base is empty."
+        )
+
+    # Add documents only if collection is empty
+    if collection.count() == 0:
+
+        collection.add(
+            documents=sections,
+            ids=[
+                f"vehicle_doc_{i}"
+                for i in range(len(sections))
+            ]
+        )
+
+        print(
+            f"[RAG Agent] Loaded {len(sections)} "
+            "knowledge documents into Chroma."
+        )
 
 
-def get_rag_context(query: str) -> str:
-    """Return retrieved knowledge as context for an AI agent."""
+def get_rag_context(
+    user_input: str,
+    top_k: int = 3
+) -> str:
+    """
+    Retrieve the most relevant vehicle knowledge
+    from Chroma.
+    """
 
-    documents = retrieve_vehicle_knowledge(query)
+    load_knowledge_base()
+
+    results = collection.query(
+        query_texts=[user_input],
+        n_results=top_k
+    )
+
+    documents = results.get(
+        "documents",
+        [[]]
+    )[0]
 
     if not documents:
-        return "No relevant vehicle maintenance information was found."
+        return (
+            "No relevant vehicle maintenance "
+            "knowledge was found."
+        )
 
-    context = "\n\n".join(
-        document.page_content
-        for document in documents
+    context = "\n\n".join(documents)
+
+    print(
+        f"[RAG Agent] Retrieved {len(documents)} "
+        "relevant knowledge sections."
     )
 
     return context
-
-
-if __name__ == "__main__":
-
-    question = input(
-        "Enter a vehicle maintenance question: "
-    )
-
-    context = get_rag_context(question)
-
-    print("\n========== RETRIEVED KNOWLEDGE ==========\n")
-    print(context)
