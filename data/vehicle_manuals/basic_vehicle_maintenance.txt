@@ -1,0 +1,22 @@
+Vehicle Starting System Maintenance
+
+Battery:
+A vehicle battery supplies electrical power to the starter motor and other electrical systems. A weak or discharged battery can cause slow engine cranking or repeated clicking when the ignition is turned on.
+
+Battery terminals:
+Battery terminals should be clean and securely connected. Corrosion or loose connections can restrict electrical current and cause starting problems.
+
+Starter motor:
+The starter motor turns the engine during the starting process. A faulty starter motor may produce a clicking sound or fail to crank the engine.
+
+Starter solenoid:
+The starter solenoid controls electrical power to the starter motor. A faulty solenoid can cause a clicking sound without the engine cranking.
+
+Battery voltage:
+A fully charged conventional 12-volt automotive battery normally has a resting voltage around 12.6 volts. A significantly lower reading may indicate a discharged or weak battery. Voltage testing should be performed using an appropriate multimeter and following safe procedures.
+
+Preventive maintenance:
+Vehicle owners should regularly inspect battery terminals, check battery condition, follow manufacturer-recommended service intervals, and inspect starting and charging systems when starting problems occur.
+
+Safety:
+Electrical and mechanical vehicle diagnosis should be performed carefully. If the user is unsure about testing or repair procedures, professional inspection is recommended.
