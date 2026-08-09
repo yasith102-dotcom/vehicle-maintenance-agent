@@ -3,18 +3,26 @@ import os
 from dotenv import load_dotenv
 from groq import Groq
 
+
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
 
 
 def diagnose_vehicle(symptoms: str, context: str = "") -> str:
+    """
+    Diagnosis Agent powered by Groq.
+    """
+
     prompt = f"""
 You are a Vehicle Diagnosis Agent.
 
 Analyze the vehicle symptoms provided by the user.
 
 Identify:
+
 1. Possible causes
 2. Most likely cause
 3. Severity level: LOW, MEDIUM, or HIGH
@@ -35,7 +43,10 @@ Vehicle symptoms:
         messages=[
             {
                 "role": "system",
-                "content": "You are a careful vehicle maintenance diagnosis assistant."
+                "content": (
+                    "You are a careful vehicle maintenance "
+                    "diagnosis assistant."
+                )
             },
             {
                 "role": "user",
