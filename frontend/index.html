@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Vehicle Maintenance AI</title>
 
     <style>
+
         * {
             box-sizing: border-box;
         }
@@ -133,159 +140,228 @@
             color: #dc2626;
             font-weight: bold;
         }
+
     </style>
+
 </head>
+
 
 <body>
 
-<header class="header">
-    <h1>🚗 Vehicle Maintenance AI</h1>
-    <p>Agentic AI Vehicle Diagnosis & Risk Assessment System</p>
-</header>
 
-<main class="container">
+    <div class="header">
 
-    <section class="card">
-        <h2>🔧 Vehicle Problem Diagnosis</h2>
+        <h1>
+            🚗 Vehicle Maintenance AI
+        </h1>
 
         <p>
-            Describe the symptoms or problem you are experiencing with your vehicle.
+            AI-powered vehicle diagnosis and maintenance assistant
         </p>
 
-        <textarea
-            id="symptoms"
-            placeholder="Example: My car makes a clicking noise when I try to start the engine."
-        ></textarea>
-
-        <button id="diagnoseButton" onclick="diagnoseVehicle()">
-            🔍 Diagnose Vehicle
-        </button>
-
-        <div id="loading">
-            🤖 AI agents are analyzing your vehicle problem...
-        </div>
-
-        <div id="error" class="error"></div>
-    </section>
+    </div>
 
 
-    <section id="result" class="card">
-
-        <h2>📋 Diagnosis Result</h2>
-
-        <span class="status">
-            ✓ Analysis Completed
-        </span>
-
-        <div class="result-box" id="resultText"></div>
-
-    </section>
-
-</main>
-
-<footer class="footer">
-    Vehicle Maintenance AI • Agentic AI System
-</footer>
+    <div class="container">
 
 
-<script>
+        <section class="card">
 
-async function diagnoseVehicle() {
+            <h2>
+                🔧 Vehicle Problem Diagnosis
+            </h2>
 
-    const symptoms =
-        document.getElementById("symptoms").value.trim();
-
-    const result =
-        document.getElementById("result");
-
-    const resultText =
-        document.getElementById("resultText");
-
-    const loading =
-        document.getElementById("loading");
-
-    const error =
-        document.getElementById("error");
-
-    const button =
-        document.getElementById("diagnoseButton");
+            <p>
+                Describe the symptoms or problem you are experiencing
+                with your vehicle.
+            </p>
 
 
-    result.style.display = "none";
-    error.textContent = "";
+            <textarea
+                id="symptoms"
+                placeholder="Example: My car makes a clicking noise when I try to start the engine."
+            ></textarea>
 
 
-    if (!symptoms) {
-
-        error.textContent =
-            "Please describe your vehicle problem.";
-
-        return;
-    }
-
-
-    loading.style.display = "block";
-    button.disabled = true;
-    button.textContent = "Analyzing...";
+            <button
+                id="diagnoseButton"
+                onclick="diagnoseVehicle()"
+            >
+                🔍 Diagnose Vehicle
+            </button>
 
 
-    try {
+            <div id="loading">
 
-        const response = await fetch(
-            "http://127.0.0.1:8000/diagnose",
-            {
-                method: "POST",
+                🤖 AI agents are analyzing your vehicle problem...
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+            </div>
 
-                body: JSON.stringify({
-                    symptoms: symptoms
-                })
+
+            <div
+                id="error"
+                class="error"
+            ></div>
+
+        </section>
+
+
+        <section
+            id="result"
+            class="card"
+        >
+
+            <h2>
+                📋 Diagnosis Result
+            </h2>
+
+
+            <span class="status">
+
+                ✓ Analysis Completed
+
+            </span>
+
+
+            <div
+                class="result-box"
+                id="resultText"
+            ></div>
+
+        </section>
+
+
+    </div>
+
+
+    <div class="footer">
+
+        Vehicle Maintenance AI |
+        Powered by Agentic AI + RAG
+
+    </div>
+
+
+    <script>
+
+        async function diagnoseVehicle() {
+
+            const symptoms =
+                document
+                    .getElementById("symptoms")
+                    .value
+                    .trim();
+
+
+            const result =
+                document.getElementById("result");
+
+
+            const resultText =
+                document.getElementById("resultText");
+
+
+            const loading =
+                document.getElementById("loading");
+
+
+            const error =
+                document.getElementById("error");
+
+
+            const button =
+                document.getElementById("diagnoseButton");
+
+
+            result.style.display = "none";
+
+            error.textContent = "";
+
+
+            if (!symptoms) {
+
+                error.textContent =
+                    "Please describe your vehicle problem.";
+
+                return;
             }
-        );
 
 
-        if (!response.ok) {
+            loading.style.display = "block";
 
-            throw new Error(
-                "The diagnosis service returned an error."
-            );
+            button.disabled = true;
+
+            button.textContent = "Analyzing...";
+
+
+            try {
+
+                const response = await fetch(
+                    "http://127.0.0.1:8000/diagnose",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            symptoms: symptoms
+                        })
+                    }
+                );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "The diagnosis service returned an error."
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                resultText.textContent =
+                    data.result;
+
+
+                result.style.display =
+                    "block";
+
+
+                result.scrollIntoView({
+                    behavior: "smooth"
+                });
+
+
+            } catch (err) {
+
+                console.error(err);
+
+
+                error.textContent =
+                    "Unable to connect to the Vehicle Maintenance AI backend. Make sure the FastAPI server is running.";
+
+            } finally {
+
+                loading.style.display = "none";
+
+                button.disabled = false;
+
+                button.textContent =
+                    "🔍 Diagnose Vehicle";
+
+            }
+
         }
 
+    </script>
 
-        const data = await response.json();
-
-
-        resultText.textContent =
-            data.result;
-
-        result.style.display = "block";
-
-
-        result.scrollIntoView({
-            behavior: "smooth"
-        });
-
-
-    } catch (err) {
-
-        error.textContent =
-            "Unable to connect to the Vehicle Maintenance AI backend. Make sure the FastAPI server is running.";
-
-    } finally {
-
-        loading.style.display = "none";
-
-        button.disabled = false;
-
-        button.textContent =
-            "🔍 Diagnose Vehicle";
-    }
-}
-
-</script>
 
 </body>
+
 </html>

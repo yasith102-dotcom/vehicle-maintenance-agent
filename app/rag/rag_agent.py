@@ -1,11 +1,15 @@
 from pathlib import Path
+
 import chromadb
+from pypdf import PdfReader
 
 
-# Project root directory
+# ============================================================
+# PROJECT PATHS
+# ============================================================
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-# Vehicle knowledge base
 KNOWLEDGE_FILE = (
     PROJECT_ROOT
     / "data"
@@ -13,47 +17,200 @@ KNOWLEDGE_FILE = (
     / "basic_vehicle_maintenance.txt"
 )
 
-# Chroma persistent database
-CHROMA_PATH = PROJECT_ROOT / ".chroma"
-
-# Create Chroma client
-client = chromadb.PersistentClient(
-    path=str(CHROMA_PATH)
+KNOWLEDGE_DIR = (
+    PROJECT_ROOT
+    / "data"
+    / "vehicle_manuals"
 )
 
-# Create or load collection
+
+# ============================================================
+# CHROMA DATABASE
+# ============================================================
+
+CHROMA_DIR = (
+    PROJECT_ROOT
+    / "data"
+    / "chroma_db"
+)
+
+client = chromadb.PersistentClient(
+    path=str(CHROMA_DIR)
+)
+
 collection = client.get_or_create_collection(
     name="vehicle_maintenance"
 )
 
 
-def load_knowledge_base():
+# ============================================================
+# LOAD TEXT KNOWLEDGE BASE
+# ============================================================
+
+def load_text_knowledge():
     """
-    Load vehicle maintenance knowledge into Chroma.
+    Load the existing TXT knowledge base.
     """
+
+    sections = []
 
     if not KNOWLEDGE_FILE.exists():
-        raise FileNotFoundError(
-            f"Knowledge base not found: {KNOWLEDGE_FILE}"
+        print(
+            f"[RAG Agent] TXT file not found: "
+            f"{KNOWLEDGE_FILE}"
+        )
+        return sections
+
+    try:
+        text = KNOWLEDGE_FILE.read_text(
+            encoding="utf-8"
+        ).strip()
+
+        if text:
+            sections.append(text)
+
+            print(
+                "[RAG Agent] Loaded TXT knowledge base."
+            )
+
+    except Exception as e:
+        print(
+            f"[RAG Agent] Error reading TXT file: {e}"
         )
 
-    text = KNOWLEDGE_FILE.read_text(
-        encoding="utf-8"
+    return sections
+
+
+# ============================================================
+# LOAD PDF KNOWLEDGE
+# ============================================================
+
+def load_pdf_knowledge():
+    """
+    Read all PDF files from the vehicle_manuals folder
+    and extract their text.
+    """
+
+    documents = []
+
+    pdf_files = sorted(
+        KNOWLEDGE_DIR.glob("*.pdf")
     )
 
-    # Split knowledge into individual sections
-    sections = [
-        section.strip()
-        for section in text.split("\n\n")
-        if section.strip()
-    ]
+    print(
+        f"[RAG Agent] Found {len(pdf_files)} PDF files."
+    )
+
+    for pdf_file in pdf_files:
+
+        try:
+            reader = PdfReader(
+                str(pdf_file)
+            )
+
+            text = ""
+
+            for page in reader.pages:
+
+                page_text = page.extract_text()
+
+                if page_text:
+                    text += page_text + "\n"
+
+            text = text.strip()
+
+            if text:
+
+                documents.append(
+                    {
+                        "source": pdf_file.name,
+                        "text": text
+                    }
+                )
+
+                print(
+                    f"[RAG Agent] Loaded PDF: "
+                    f"{pdf_file.name}"
+                )
+
+            else:
+
+                print(
+                    f"[RAG Agent] WARNING: "
+                    f"No text extracted from "
+                    f"{pdf_file.name}"
+                )
+
+        except Exception as e:
+
+            print(
+                f"[RAG Agent] Error reading "
+                f"{pdf_file.name}: {e}"
+            )
+
+    return documents
+
+
+# ============================================================
+# LOAD ALL KNOWLEDGE INTO CHROMA
+# ============================================================
+
+def load_knowledge_base():
+    """
+    Load TXT and PDF knowledge into Chroma.
+    """
+
+    sections = []
+
+    # --------------------------------------------------------
+    # Load TXT knowledge
+    # --------------------------------------------------------
+
+    text_sections = load_text_knowledge()
+
+    sections.extend(
+        text_sections
+    )
+
+    # --------------------------------------------------------
+    # Load PDF knowledge
+    # --------------------------------------------------------
+
+    pdf_documents = load_pdf_knowledge()
+
+    for pdf_document in pdf_documents:
+
+        source = pdf_document["source"]
+        text = pdf_document["text"]
+
+        document_text = (
+            f"Source: {source}\n\n"
+            f"{text}"
+        )
+
+        sections.append(
+            document_text
+        )
+
+    # --------------------------------------------------------
+    # Check knowledge base
+    # --------------------------------------------------------
 
     if not sections:
+
         raise ValueError(
             "Knowledge base is empty."
         )
 
-    # Add documents only if collection is empty
+    print(
+        f"\n[RAG Agent] Total knowledge documents: "
+        f"{len(sections)}"
+    )
+
+    # --------------------------------------------------------
+    # Add documents to Chroma
+    # --------------------------------------------------------
+
     if collection.count() == 0:
 
         collection.add(
@@ -65,20 +222,35 @@ def load_knowledge_base():
         )
 
         print(
-            f"[RAG Agent] Loaded {len(sections)} "
+            f"[RAG Agent] Loaded "
+            f"{len(sections)} "
             "knowledge documents into Chroma."
         )
 
+    else:
+
+        print(
+            f"[RAG Agent] Chroma already contains "
+            f"{collection.count()} documents."
+        )
+
+    return sections
+
+
+# ============================================================
+# RETRIEVE RAG CONTEXT
+# ============================================================
 
 def get_rag_context(
     user_input: str,
     top_k: int = 3
 ) -> str:
     """
-    Retrieve the most relevant vehicle knowledge
-    from Chroma.
+    Retrieve the most relevant vehicle maintenance
+    knowledge from Chroma.
     """
 
+    # Make sure knowledge base exists
     load_knowledge_base()
 
     results = collection.query(
@@ -92,16 +264,93 @@ def get_rag_context(
     )[0]
 
     if not documents:
+
         return (
             "No relevant vehicle maintenance "
             "knowledge was found."
         )
 
-    context = "\n\n".join(documents)
+    context = "\n\n".join(
+        documents
+    )
 
     print(
-        f"[RAG Agent] Retrieved {len(documents)} "
+        f"[RAG Agent] Retrieved "
+        f"{len(documents)} "
         "relevant knowledge sections."
     )
 
     return context
+
+
+# ============================================================
+# TEST RAG AGENT
+# ============================================================
+
+if __name__ == "__main__":
+
+    print(
+        "\n========================================"
+    )
+
+    print(
+        "      VEHICLE MAINTENANCE RAG AGENT"
+    )
+
+    print(
+        "========================================\n"
+    )
+
+    # --------------------------------------------------------
+    # Load PDFs
+    # --------------------------------------------------------
+
+    pdf_docs = load_pdf_knowledge()
+
+    print(
+        f"\nTotal PDFs loaded: "
+        f"{len(pdf_docs)}"
+    )
+
+    # --------------------------------------------------------
+    # Load everything into Chroma
+    # --------------------------------------------------------
+
+    print(
+        "\nLoading knowledge into Chroma..."
+    )
+
+    load_knowledge_base()
+
+    print(
+        "\n[RAG Agent] RAG knowledge base "
+        "is ready."
+    )
+
+    # --------------------------------------------------------
+    # TEST RAG RETRIEVAL
+    # --------------------------------------------------------
+
+    test_question = (
+        "My car engine is overheating. "
+        "What should I check?"
+    )
+
+    print(
+        "\nTesting RAG retrieval..."
+    )
+
+    context = get_rag_context(
+        test_question,
+        top_k=3
+    )
+
+    print(
+        "\n========== RETRIEVED CONTEXT ==========\n"
+    )
+
+    print(context)
+
+    print(
+        "\n========================================"
+    )

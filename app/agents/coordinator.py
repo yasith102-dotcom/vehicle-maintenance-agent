@@ -1,13 +1,29 @@
 import sys
 from pathlib import Path
 
+
+# ============================================================
+# PROJECT PATH
+# ============================================================
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-sys.path.append(str(PROJECT_ROOT))
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
+
+# ============================================================
+# IMPORT AGENTS
+# ============================================================
 
 from app.agents.diagnosis import diagnose_vehicle
 from app.rag.rag_agent import get_rag_context
 from app.agents.risk_agent import assess_risk
 
+
+# ============================================================
+# COORDINATOR AGENT
+# ============================================================
 
 def coordinate_request(user_input: str) -> str:
     """
@@ -15,41 +31,79 @@ def coordinate_request(user_input: str) -> str:
     the RAG, Diagnosis, and Risk Assessment agents.
     """
 
-    print("\n[Coordinator Agent] Request received.")
-
-    print("[Coordinator Agent] Retrieving vehicle knowledge...")
-
-    context = get_rag_context(user_input)
-
-    print("[Coordinator Agent] Sending request to Diagnosis Agent...")
-
-    diagnosis = diagnose_vehicle(user_input, context)
-
-    print("[Coordinator Agent] Diagnosis Agent responded.")
-
     print(
-        "[Coordinator Agent] Sending diagnosis "
-        "to Risk Assessment Agent..."
+        "\n[Coordinator Agent] Request received."
     )
 
-    risk_assessment = assess_risk(diagnosis)
+    # --------------------------------------------------------
+    # Step 1: Retrieve knowledge using RAG Agent
+    # --------------------------------------------------------
 
     print(
-        "[Coordinator Agent] Risk Assessment Agent responded."
+        "[Coordinator Agent] "
+        "Retrieving vehicle knowledge..."
     )
+
+    context = get_rag_context(
+        user_input
+    )
+
+    # --------------------------------------------------------
+    # Step 2: Send user input + RAG context
+    #         to Diagnosis Agent
+    # --------------------------------------------------------
+
+    print(
+        "[Coordinator Agent] "
+        "Sending request to Diagnosis Agent..."
+    )
+
+    diagnosis = diagnose_vehicle(
+        user_input,
+        context
+    )
+
+    print(
+        "[Coordinator Agent] "
+        "Diagnosis Agent responded."
+    )
+
+    # --------------------------------------------------------
+    # Step 3: Send diagnosis to Risk Agent
+    # --------------------------------------------------------
+
+    print(
+        "[Coordinator Agent] "
+        "Sending diagnosis to Risk Assessment Agent..."
+    )
+
+    risk_assessment = assess_risk(
+        diagnosis
+    )
+
+    print(
+        "[Coordinator Agent] "
+        "Risk Assessment Agent responded."
+    )
+
+    # --------------------------------------------------------
+    # Step 4: Return final result
+    # --------------------------------------------------------
 
     return f"""
-DIAGNOSIS
-=========
+# DIAGNOSIS
 
 {diagnosis}
 
-RISK ASSESSMENT
-===============
+# RISK ASSESSMENT
 
 {risk_assessment}
 """
 
+
+# ============================================================
+# TEST COORDINATOR AGENT
+# ============================================================
 
 if __name__ == "__main__":
 
@@ -57,7 +111,12 @@ if __name__ == "__main__":
         "Describe your vehicle problem: "
     )
 
-    result = coordinate_request(user_input)
+    result = coordinate_request(
+        user_input
+    )
 
-    print("\n========== FINAL RESULT ==========")
+    print(
+        "\n========== FINAL RESULT =========="
+    )
+
     print(result)
