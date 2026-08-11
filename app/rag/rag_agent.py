@@ -241,13 +241,19 @@ def load_knowledge_base():
 # RETRIEVE RAG CONTEXT
 # ============================================================
 
+```python
+# ============================================================
+# RETRIEVE RAG CONTEXT
+# ============================================================
+
 def get_rag_context(
     user_input: str,
     top_k: int = 3
 ) -> str:
     """
     Retrieve the most relevant vehicle maintenance
-    knowledge from Chroma.
+    knowledge from Chroma while limiting the amount
+    of context sent to the LLM.
     """
 
     # Make sure knowledge base exists
@@ -264,15 +270,45 @@ def get_rag_context(
     )[0]
 
     if not documents:
-
         return (
             "No relevant vehicle maintenance "
             "knowledge was found."
         )
 
+    # --------------------------------------------------------
+    # Limit each retrieved document
+    # --------------------------------------------------------
+
+    MAX_CHARS_PER_DOCUMENT = 4000
+    MAX_TOTAL_CONTEXT_CHARS = 9000
+
+    limited_documents = []
+
+    for document in documents:
+
+        limited_document = document[
+            :MAX_CHARS_PER_DOCUMENT
+        ]
+
+        limited_documents.append(
+            limited_document
+        )
+
+    # --------------------------------------------------------
+    # Combine retrieved documents
+    # --------------------------------------------------------
+
     context = "\n\n".join(
-        documents
+        limited_documents
     )
+
+    # --------------------------------------------------------
+    # Final safety limit
+    # --------------------------------------------------------
+
+    context = context[
+        :MAX_TOTAL_CONTEXT_CHARS
+    ]
 
     print(
         f"[RAG Agent] Retrieved "
@@ -280,7 +316,14 @@ def get_rag_context(
         "relevant knowledge sections."
     )
 
+    print(
+        f"[RAG Agent] Context limited to "
+        f"{len(context)} characters."
+    )
+
     return context
+```
+
 
 
 # ============================================================

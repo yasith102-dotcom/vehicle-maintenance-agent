@@ -10,10 +10,19 @@ client = Groq(
 )
 
 
+```python
 def diagnose_vehicle(symptoms: str, context: str = "") -> str:
     """
     Diagnosis Agent powered by Groq.
     """
+
+    # Limit RAG context before sending it to Groq
+    MAX_CONTEXT_CHARS = 6000
+
+    if context:
+        context = context[:MAX_CONTEXT_CHARS]
+    else:
+        context = "No relevant vehicle maintenance knowledge was found."
 
     prompt = f"""
 You are a Vehicle Diagnosis Agent.
@@ -56,12 +65,4 @@ Vehicle symptoms:
     )
 
     return response.choices[0].message.content
-
-
-if __name__ == "__main__":
-    symptoms = input("Enter vehicle symptoms: ")
-
-    result = diagnose_vehicle(symptoms)
-
-    print("\n--- Diagnosis Result ---")
-    print(result)
+```
