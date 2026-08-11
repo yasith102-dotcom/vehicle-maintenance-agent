@@ -1,3 +1,4 @@
+
 from pathlib import Path
 
 import chromadb
@@ -197,7 +198,6 @@ def load_knowledge_base():
     # --------------------------------------------------------
 
     if not sections:
-
         raise ValueError(
             "Knowledge base is empty."
         )
@@ -241,19 +241,13 @@ def load_knowledge_base():
 # RETRIEVE RAG CONTEXT
 # ============================================================
 
-```python
-# ============================================================
-# RETRIEVE RAG CONTEXT
-# ============================================================
-
 def get_rag_context(
     user_input: str,
     top_k: int = 3
 ) -> str:
     """
-    Retrieve the most relevant vehicle maintenance
-    knowledge from Chroma while limiting the amount
-    of context sent to the LLM.
+    Retrieve relevant vehicle maintenance knowledge
+    from Chroma while limiting the context size.
     """
 
     # Make sure knowledge base exists
@@ -276,11 +270,11 @@ def get_rag_context(
         )
 
     # --------------------------------------------------------
-    # Limit each retrieved document
+    # Limit retrieved documents
     # --------------------------------------------------------
 
-    MAX_CHARS_PER_DOCUMENT = 4000
-    MAX_TOTAL_CONTEXT_CHARS = 9000
+    MAX_CHARS_PER_DOCUMENT = 2000
+    MAX_TOTAL_CONTEXT_CHARS = 6000
 
     limited_documents = []
 
@@ -295,7 +289,7 @@ def get_rag_context(
         )
 
     # --------------------------------------------------------
-    # Combine retrieved documents
+    # Combine documents
     # --------------------------------------------------------
 
     context = "\n\n".join(
@@ -322,8 +316,6 @@ def get_rag_context(
     )
 
     return context
-```
-
 
 
 # ============================================================
@@ -371,7 +363,7 @@ if __name__ == "__main__":
     )
 
     # --------------------------------------------------------
-    # TEST RAG RETRIEVAL
+    # Test RAG retrieval
     # --------------------------------------------------------
 
     test_question = (
